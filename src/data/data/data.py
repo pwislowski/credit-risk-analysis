@@ -4,6 +4,7 @@ import pandas as pd
 __all__ = [
     'get_cleaned_data',
     'process_data',
+    'get_interquartile',
 ]
 
 # * Data import
@@ -110,3 +111,14 @@ def process_data(x_df: pd.DataFrame) -> pd.DataFrame:
     )
 
     return df
+
+def get_interquartile(xdf: pd.DataFrame) -> pd.DataFrame:
+    num = xdf.select_dtypes(include=['float64', 'int64'])
+    
+    Q1 = num.quantile(1/4)
+    Q3 = num.quantile(3/4)
+
+    IQR: pd.DataFrame = Q3 - Q1
+    IQR.columns = ['IQR']
+
+    return IQR

@@ -2,7 +2,7 @@
 name = "credit-risk"
 version = "0.1.0"
 description = "Credit Risk analysis to identify defaults with visualization."
-authors = ["Piotr Wislowski",]
+authors = ["Piotr Wislowski <pwislowski@hotmail.com>",]
 readme = "README.md"
 packages = [{include = "credit_risk"}]
 
@@ -17,8 +17,8 @@ plotly = "^5.14.1"
 scikit-learn = "^1.2.2"
 imbalanced-learn = "^0.10.1"
 xgboost = "^1.7.5"
-data = { path = "src/data/", develop = true }
-model = { path = "src/model/", develop = true }
+data = { path = "src/data/", develop = false }
+model = { path = "src/model/", develop = false }
 
 
 [tool.poetry.group.dev.dependencies]
