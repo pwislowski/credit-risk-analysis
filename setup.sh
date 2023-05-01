@@ -1,3 +1,6 @@
+pip install -e ./src/model
+pip install -e ./src/data
+
 mkdir -p ~/.streamlit
 
 echo "\
