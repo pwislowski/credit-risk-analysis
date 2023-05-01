@@ -4,7 +4,6 @@ import pandas as pd
 import streamlit as st
 
 # local libs
-# ! install local libs as dependencies
 from data import process_data, get_cleaned_data
 import model
 from model import ModelPerformance

@@ -1,3 +1,7 @@
 import streamlit as st
 
-st.write("hello world!")
+st.set_page_config(page_title="Data Insights", layout="wide")
+
+st.title("Data Insigths")
+st.header("Descriptive Statistics")
+st.divider()

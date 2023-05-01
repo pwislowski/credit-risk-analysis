@@ -1,3 +1,2 @@
 cd src
-cd pages
-poetry run streamlit run Model.py
+poetry run streamlit run Hello.py
