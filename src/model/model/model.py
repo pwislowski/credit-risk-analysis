@@ -1,43 +1,52 @@
-from typing import List, Dict
+from typing import List, Dict, Union
 from dataclasses import dataclass
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import MinMaxScaler, LabelEncoder
 from imblearn.over_sampling import SMOTE
-from sklearn.metrics import (
-    classification_report,
-    roc_curve,
-    roc_auc_score,
-)
 import pandas as pd
 from xgboost import XGBClassifier
-from sklearn.model_selection import GridSearchCV
+import streamlit as st
 
-__all__ = ["process_df", "xgbclassifier_model"]
+__all__ = [
+    "process_df",
+    "xgbclassifier_model",
+    "transform_for_pred",
+    "LABEL_MAPPING",
+    "SCALER_MAPPING",
+]
 
 BEST_PARAMS = dict(learning_rate=0.1, max_depth=5, n_estimators=500)
 RANDOM_STATE = 38
+LABEL_MAPPING: Dict[str, LabelEncoder] = dict()
+SCALER_MAPPING: Dict[str, MinMaxScaler] = dict()
 
 
 def normalize_df(xdf: pd.DataFrame) -> pd.DataFrame:
     numeric_cols = xdf.select_dtypes(include=["float64", "int64"]).columns
-    scaler = MinMaxScaler()
-    xdf[numeric_cols] = scaler.fit_transform(xdf[numeric_cols])
+
+    for c in numeric_cols:
+        scaler = MinMaxScaler()
+        scaler.fit(xdf[c].to_numpy().reshape(-1, 1))
+        SCALER_MAPPING[c] = scaler
+        xdf[c] = scaler.transform(xdf[c].to_numpy().reshape(-1, 1))
 
     return xdf
 
 
 def labels_encode(xdf: pd.DataFrame) -> pd.DataFrame:
     category_cols = xdf.select_dtypes("category").columns
-    le = LabelEncoder()
 
     for c in category_cols:
-        xdf[c] = le.fit_transform(xdf[c])
+        le = LabelEncoder()
+        le.fit(xdf[c])
+        LABEL_MAPPING[c] = dict(zip(le.classes_, le.transform(le.classes_)))
+        xdf[c] = le.transform(xdf[c])
 
     return xdf
 
 
 def apply_smote(xdf: pd.DataFrame) -> pd.DataFrame:
-    smote = SMOTE()
+    smote = SMOTE(random_state=RANDOM_STATE)
     y = xdf["class"]
     X = xdf.drop("class", axis=1)
 
@@ -66,9 +75,38 @@ def process_df(xdf: pd.DataFrame) -> Dict["str", pd.DataFrame]:
     return {k: v for [k, v] in zip(keys, splitted)}
 
 
+@st.cache_resource
 def xgbclassifier_model(X_train, y_train) -> XGBClassifier:
     model = XGBClassifier(**{**BEST_PARAMS, "random_state": RANDOM_STATE})
 
     model.fit(X_train, y_train)
 
     return model
+
+
+def get_label_encoding(coll: Dict[str, Dict[str, int]], label: str, key: str) -> int:
+    return coll[label][key]
+
+
+def scale_for_pred(
+    coll: Dict[str, MinMaxScaler], label: str, val: Union[int, float]
+) -> float:
+    scaler: MinMaxScaler = coll[label]
+    val = [[val]]
+
+    return scaler.transform(val)[0][0]
+
+
+def transform_for_pred(
+    coll_num: Dict[str, MinMaxScaler],
+    coll_cat: Dict[str, Dict[str, int]],
+    form: Dict[str, Union[str, int, float]],
+) -> pd.DataFrame:
+    for [k, v] in form.items():
+        try:
+            temp = coll_cat[k]
+            form[k] = get_label_encoding(coll_cat, k, v)
+        except KeyError:
+            form[k] = scale_for_pred(coll_num, k, v)
+
+    return pd.DataFrame(data = form.values(), index= form.keys()).T
