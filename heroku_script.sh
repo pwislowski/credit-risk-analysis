@@ -1,2 +1,2 @@
 cd src
-streamlit run Hello.py
+streamlit run Home.py
